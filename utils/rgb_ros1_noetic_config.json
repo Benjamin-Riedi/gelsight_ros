@@ -1,0 +1,12 @@
+{
+  "node_name": "gelsight_rgb_publisher",
+  "image_topic": "/gelsight/rgb/image_raw",
+  "frame_id": "gelsight_rgb_optical_frame",
+  "publish_rate_hz": 25.0,
+  "queue_size": 2,
+  "device": "/dev/v4l/by-id/usb-Arducam_Technology_Co.__Ltd._GelSight_Mini_R0B_2DMT-37A7_2DMT37A7-video-index0",
+  "target_width": 640,
+  "target_height": 480,
+  "border_fraction": 0.15,
+  "prefer_v4l2": true
+}
