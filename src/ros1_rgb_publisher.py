@@ -30,9 +30,9 @@ def main():
 
     rospy.init_node(cfg.get("node_name", "gelsight_rgb_publisher"), anonymous=False)
 
-    image_topic = cfg.get("image_topic", "/gelsight/rgb/image_raw")
+    image_topic = cfg.get("image_topic", "/gelsight/image_raw")
     frame_id = cfg.get("frame_id", "gelsight_rgb_optical_frame")
-    publish_rate_hz = float(cfg.get("publish_rate_hz", 30.0))
+    publish_rate_hz = float(cfg.get("publish_rate_hz", 25.0))
 
     cam = GelSightMiniRGBCompat(
         target_width=int(cfg.get("target_width", 640)),
@@ -50,7 +50,7 @@ def main():
 
     cam.open(device=device)
 
-    pub = rospy.Publisher(image_topic, Image, queue_size=int(cfg.get("queue_size", 2)))
+    pub = rospy.Publisher(image_topic, Image, queue_size=int(cfg.get("queue_size", 10)))
     bridge = CvBridge()
     rate = rospy.Rate(publish_rate_hz)
 

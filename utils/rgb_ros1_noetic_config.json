@@ -1,6 +1,6 @@
 {
   "node_name": "gelsight_rgb_publisher",
-  "image_topic": "/gelsight/rgb/image_raw",
+  "image_topic": "/gelsight/image_raw",
   "frame_id": "gelsight_rgb_optical_frame",
   "publish_rate_hz": 25.0,
   "queue_size": 2,
