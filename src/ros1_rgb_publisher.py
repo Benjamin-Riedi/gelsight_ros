@@ -51,7 +51,7 @@ def main():
 
     cam.open(device=device)
 
-    pub = rospy.Publisher(image_topic, Image, queue_size=int(cfg.get("queue_size", 10)))
+    pub = rospy.Publisher(image_topic, Image, queue_size=int(cfg.get("queue_size", 1)))
     bridge = CvBridge()
     rate = rospy.Rate(publish_rate_hz)
 
@@ -75,19 +75,18 @@ def main():
             pub.publish(msg)
             t4 = time.perf_counter()
 
-            rate.sleep()
-            t5 = time.perf_counter()
+            # rate.sleep()
+            # t5 = time.perf_counter()
 
             rospy.logdebug(
                 "loop timings (ms) — read_rgb: %.2f  cv2_to_imgmsg: %.2f  "
-                "stamp+frame_id: %.2f  publish: %.2f  rate.sleep: %.2f  "
+                "stamp+frame_id: %.2f  publish: %.2f  rate.sleep: not tracked  "
                 "total: %.2f",
                 (t1 - t0) * 1e3,
                 (t2 - t1) * 1e3,
                 (t3 - t2) * 1e3,
                 (t4 - t3) * 1e3,
-                (t5 - t4) * 1e3,
-                (t5 - t_loop_start) * 1e3,
+                (t4 - t_loop_start) * 1e3,
             )
     finally:
         cam.release()
