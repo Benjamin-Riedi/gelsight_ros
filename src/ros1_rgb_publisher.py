@@ -2,6 +2,7 @@
 import argparse
 import json
 import os
+import time
 
 import rospy
 from cv_bridge import CvBridge
@@ -58,12 +59,36 @@ def main():
 
     try:
         while not rospy.is_shutdown():
+            t_loop_start = time.perf_counter()
+
+            t0 = time.perf_counter()
             frame_rgb = cam.read_rgb()
+            t1 = time.perf_counter()
+
             msg = bridge.cv2_to_imgmsg(frame_rgb, encoding="rgb8")
+            t2 = time.perf_counter()
+
             msg.header.stamp = rospy.Time.now()
             msg.header.frame_id = frame_id
+            t3 = time.perf_counter()
+
             pub.publish(msg)
+            t4 = time.perf_counter()
+
             rate.sleep()
+            t5 = time.perf_counter()
+
+            rospy.logdebug(
+                "loop timings (ms) — read_rgb: %.2f  cv2_to_imgmsg: %.2f  "
+                "stamp+frame_id: %.2f  publish: %.2f  rate.sleep: %.2f  "
+                "total: %.2f",
+                (t1 - t0) * 1e3,
+                (t2 - t1) * 1e3,
+                (t3 - t2) * 1e3,
+                (t4 - t3) * 1e3,
+                (t5 - t4) * 1e3,
+                (t5 - t_loop_start) * 1e3,
+            )
     finally:
         cam.release()
 
