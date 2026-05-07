@@ -8,5 +8,13 @@
   "target_width": 640,
   "target_height": 480,
   "border_fraction": 0.15,
-  "prefer_v4l2": false
+  "prefer_v4l2": false,
+  "backend": null,
+  "buffersize": 1,
+  "fps": 25.0,
+  "fourcc": null,
+  "warmup_grabs": 3,
+  "log_capture_properties": true,
+  "retry_resolution_on_mismatch": true,
+  "forced_roi": null
 }

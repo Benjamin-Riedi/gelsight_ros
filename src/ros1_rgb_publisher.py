@@ -40,6 +40,16 @@ def main():
         target_height=int(cfg.get("target_height", 480)),
         border_fraction=float(cfg.get("border_fraction", 0.15)),
         prefer_v4l2=bool(cfg.get("prefer_v4l2", True)),
+        backend=cfg.get("backend", None),
+        buffersize=cfg.get("buffersize", 1),
+        fps=cfg.get("fps", 25.0),
+        fourcc=cfg.get("fourcc", None),
+        warmup_grabs=int(cfg.get("warmup_grabs", 3)),
+        log_capture_properties=bool(cfg.get("log_capture_properties", True)),
+        forced_roi=cfg.get("forced_roi", None),
+        retry_resolution_on_mismatch=bool(
+            cfg.get("retry_resolution_on_mismatch", True)
+        ),
     )
 
     device = cfg.get("device", None)
