@@ -104,6 +104,8 @@ class GelSightMiniRGBCompat:
 
         backend values (Linux only): "default"/"auto", "v4l2", "gstreamer".
         Set buffersize=None or fps=None to skip those property requests.
+        fourcc examples: "MJPG", "YUYV"; use None to keep driver default.
+        forced_roi format: [x, y, width, height].
         """
         self.target_width = int(target_width)
         self.target_height = int(target_height)
@@ -184,6 +186,18 @@ class GelSightMiniRGBCompat:
             return cv2.CAP_V4L2
         return None
 
+    def _read_capture_properties(self, backend_flag: Optional[int]):
+        backend_prop = getattr(cv2, "CAP_PROP_BACKEND", None)
+        return {
+            "width": int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
+            "height": int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
+            "fps": float(self.cap.get(cv2.CAP_PROP_FPS)),
+            "fourcc": _fourcc_to_str(self.cap.get(cv2.CAP_PROP_FOURCC)),
+            "backend": int(self.cap.get(backend_prop)) if backend_prop is not None else None,
+            "buffersize": float(self.cap.get(cv2.CAP_PROP_BUFFERSIZE)),
+            "backend_label": _backend_flag_to_name(backend_flag),
+        }
+
     def open(self, device: Optional[DeviceRef] = None) -> None:
         resolved_device = self._resolve_device(device)
 
@@ -221,14 +235,14 @@ class GelSightMiniRGBCompat:
             print(
                 "Warning: camera driver did not confirm requested frame size properties."
             )
-        actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        actual_fps = float(self.cap.get(cv2.CAP_PROP_FPS))
-        actual_fourcc = _fourcc_to_str(self.cap.get(cv2.CAP_PROP_FOURCC))
-        backend_prop = getattr(cv2, "CAP_PROP_BACKEND", None)
-        actual_backend = int(self.cap.get(backend_prop)) if backend_prop is not None else None
-        actual_buffersize = float(self.cap.get(cv2.CAP_PROP_BUFFERSIZE))
-        backend_label = _backend_flag_to_name(backend_flag)
+        props = self._read_capture_properties(backend_flag)
+        actual_width = props["width"]
+        actual_height = props["height"]
+        actual_fps = props["fps"]
+        actual_fourcc = props["fourcc"]
+        actual_backend = props["backend"]
+        actual_buffersize = props["buffersize"]
+        backend_label = props["backend_label"]
         size_mismatch = (
             actual_width != self.target_width or actual_height != self.target_height
         )
@@ -250,9 +264,6 @@ class GelSightMiniRGBCompat:
                 retry_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                 retry_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                 if retry_width == self.target_width and retry_height == self.target_height:
-                    actual_width = retry_width
-                    actual_height = retry_height
-                    size_mismatch = False
                     print(
                         "Info: resolution switch succeeded on retry: {0}x{1}".format(
                             retry_width, retry_height
@@ -264,14 +275,13 @@ class GelSightMiniRGBCompat:
                             retry_width, retry_height
                         )
                     )
-                actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                actual_fps = float(self.cap.get(cv2.CAP_PROP_FPS))
-                actual_fourcc = _fourcc_to_str(self.cap.get(cv2.CAP_PROP_FOURCC))
-                actual_backend = (
-                    int(self.cap.get(backend_prop)) if backend_prop is not None else None
-                )
-                actual_buffersize = float(self.cap.get(cv2.CAP_PROP_BUFFERSIZE))
+                props = self._read_capture_properties(backend_flag)
+                actual_width = props["width"]
+                actual_height = props["height"]
+                actual_fps = props["fps"]
+                actual_fourcc = props["fourcc"]
+                actual_backend = props["backend"]
+                actual_buffersize = props["buffersize"]
                 size_mismatch = (
                     actual_width != self.target_width or actual_height != self.target_height
                 )
@@ -281,6 +291,11 @@ class GelSightMiniRGBCompat:
                 "Warning: forced_roi must be [x, y, width, height] with positive width/height. Ignoring value: {0}".format(
                     self.forced_roi_input
                 )
+            )
+        elif self.forced_roi is not None:
+            print(
+                "Warning: forced_roi is enabled. This can reduce downstream processing "
+                "workload but remains CPU-bound because cropping is applied after frame capture."
             )
 
         if self.log_capture_properties:
@@ -298,7 +313,7 @@ class GelSightMiniRGBCompat:
                 )
             )
 
-        is_mjpg = actual_fourcc.upper() == "MJPG"
+        is_mjpg = bool(actual_fourcc) and str(actual_fourcc).upper() == "MJPG"
         uses_v4l2_backend = actual_backend == cv2.CAP_V4L2 or backend_label == "v4l2"
         if size_mismatch and is_mjpg and _is_linux_video_device(resolved_device):
             if uses_v4l2_backend or backend_label == "default":
@@ -311,11 +326,6 @@ class GelSightMiniRGBCompat:
                         actual_width, actual_height
                     )
                 )
-                if self.forced_roi is not None:
-                    print(
-                        "Warning: forced_roi is enabled. This may reduce downstream processing "
-                        "workload but remains CPU-bound because full MJPG frames are still decoded first."
-                    )
 
         for i in range(self.warmup_grabs):
             if not self.cap.grab():
