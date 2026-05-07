@@ -64,6 +64,9 @@ def main():
             t0 = time.perf_counter()
             frame_rgb = cam.read_rgb()
             t1 = time.perf_counter()
+            if frame_rgb is None:
+                rospy.logwarn("Received empty frame from camera, skipping publish.")
+                continue
 
             msg = bridge.cv2_to_imgmsg(frame_rgb, encoding="rgb8")
             t2 = time.perf_counter()
