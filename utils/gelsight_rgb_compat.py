@@ -57,7 +57,12 @@ def _backend_flag_to_name(backend_flag: Optional[int]) -> str:
 
 
 class GelSightMiniRGBCompat:
-    """RGB-only OpenCV capture helper, compatible with Python 3.8+."""
+    """RGB-only OpenCV capture helper, compatible with Python 3.8+.
+
+    Performance notes (Linux):
+    - Backend, FOURCC, FPS and buffering have a huge impact on throughput.
+    - For many UVC cameras, reducing CAP_PROP_BUFFERSIZE helps a lot.
+    """
 
     def __init__(
         self,
@@ -65,11 +70,12 @@ class GelSightMiniRGBCompat:
         target_height=480,
         border_fraction=0.15,
         prefer_v4l2=True,
-        backend: Optional[str] = None,
+        # New performance/diagnostic options (all optional / backward compatible)
+        fps: Optional[float] = None,
         buffersize: Optional[int] = 1,
-        fps: Optional[float] = 25.0,
-        fourcc: Optional[str] = None,
-        warmup_grabs: int = 3,
+        fourcc: Optional[str] = None,  # e.g. "MJPG", "YUYV"
+        backend: Optional[str] = None,  # "auto" | "v4l2" | "gstreamer"
+        warmup_frames: int = 3,
         log_capture_properties: bool = True,
     ):
         """Initialize camera helper.
@@ -81,13 +87,14 @@ class GelSightMiniRGBCompat:
         self.target_height = int(target_height)
         self.border_fraction = float(border_fraction)
         self.prefer_v4l2 = bool(prefer_v4l2)
-        self.backend = backend
-        # Set to None to skip requesting these properties on open().
+
+        self.fps_request = None if fps is None else float(fps)
         self.buffersize = None if buffersize is None else int(buffersize)
-        self.requested_fps = None if fps is None else float(fps)
         self.fourcc = fourcc
-        self.warmup_grabs = max(0, int(warmup_grabs))
+        self.backend = backend  # if None -> derived from prefer_v4l2 / platform
+        self.warmup_frames = int(warmup_frames)
         self.log_capture_properties = bool(log_capture_properties)
+
         self.cap = None
         self.fps = 0.0
         self._time_prev = time.time()
@@ -105,7 +112,7 @@ class GelSightMiniRGBCompat:
 
             video_nodes = sorted(glob.glob("/dev/video*"))
             for path in video_nodes:
-                match = re.search(r"/dev/video(\\d+)$", path)
+                match = re.search(r"/dev/video(\d+)$", path)
                 if match:
                     devices[int(match.group(1))] = path
             return devices
@@ -186,11 +193,22 @@ class GelSightMiniRGBCompat:
         width_ok = self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, float(self.target_width))
         height_ok = self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, float(self.target_height))
         if not width_ok or not height_ok:
-            print(
-                "Warning: camera driver did not confirm requested frame size properties."
-            )
+            print("Warning: camera driver did not confirm requested frame size properties.")
+
+        # Request FOURCC (pixel format) if provided.
+        # NOTE: This is a *request*; drivers may ignore it.
+        if self.fourcc:
+            try:
+                self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*self.fourcc))
+            except Exception as e:
+                print(f"Warning: failed to set FOURCC='{self.fourcc}': {e}")
+
         actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        actual_fps = float(self.cap.get(cv2.CAP_PROP_FPS))
+        actual_fourcc = _fourcc_to_str(self.cap.get(cv2.CAP_PROP_FOURCC))
+        actual_buffersize = float(self.cap.get(cv2.CAP_PROP_BUFFERSIZE))
+
         if actual_width != self.target_width or actual_height != self.target_height:
             print(
                 "Warning: requested resolution {0}x{1}, got {2}x{3}".format(
@@ -226,11 +244,11 @@ class GelSightMiniRGBCompat:
                 )
             )
 
-        for i in range(self.warmup_grabs):
+        for i in range(self.warmup_frames):
             if not self.cap.grab():
                 print(
                     "Warning: warmup grab failed at attempt {0} of {1}.".format(
-                        i + 1, self.warmup_grabs
+                        i + 1, self.warmup_frames
                     )
                 )
                 break
