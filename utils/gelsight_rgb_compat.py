@@ -33,6 +33,15 @@ def _crop_and_resize(
     return cropped
 
 
+def _fourcc_to_str(fourcc_value: float) -> str:
+    """Convert OpenCV FOURCC float value to printable 4-character string."""
+    try:
+        value = int(fourcc_value)
+        return "".join([chr((value >> (8 * i)) & 0xFF) for i in range(4)])
+    except Exception:
+        return "????"
+
+
 class GelSightMiniRGBCompat:
     """RGB-only OpenCV capture helper, compatible with Python 3.8+."""
 
@@ -42,11 +51,23 @@ class GelSightMiniRGBCompat:
         target_height=480,
         border_fraction=0.15,
         prefer_v4l2=True,
+        backend=None,
+        buffersize=1,
+        fps=25.0,
+        fourcc=None,
+        warmup_grabs=3,
+        log_capture_properties=True,
     ):
         self.target_width = int(target_width)
         self.target_height = int(target_height)
         self.border_fraction = float(border_fraction)
         self.prefer_v4l2 = bool(prefer_v4l2)
+        self.backend = backend
+        self.buffersize = None if buffersize is None else int(buffersize)
+        self.requested_fps = None if fps is None else float(fps)
+        self.fourcc = fourcc
+        self.warmup_grabs = max(0, int(warmup_grabs))
+        self.log_capture_properties = bool(log_capture_properties)
         self.cap = None
         self.fps = 0.0
         self._time_prev = time.time()
@@ -87,19 +108,57 @@ class GelSightMiniRGBCompat:
 
         return devices[min(devices.keys())]
 
+    def _resolve_backend_flag(self):
+        if platform.system() != "Linux":
+            return None
+
+        backend = self.backend
+        if backend is not None:
+            backend = str(backend).strip().lower()
+            if backend in ("default", "auto", ""):
+                return None
+            if backend == "v4l2":
+                return cv2.CAP_V4L2
+            if backend == "gstreamer":
+                return cv2.CAP_GSTREAMER
+            print("Warning: unknown backend '{0}', using default.".format(self.backend))
+            return None
+
+        # Backward-compatible behavior when backend is not explicitly provided.
+        if self.prefer_v4l2 and platform.system() == "Linux":
+            return cv2.CAP_V4L2
+        return None
+
     def open(self, device: Optional[DeviceRef] = None) -> None:
         resolved_device = self._resolve_device(device)
 
         if self.cap is not None:
             self.release()
 
-        if platform.system() == "Linux" and self.prefer_v4l2:
-            self.cap = cv2.VideoCapture(resolved_device, cv2.CAP_V4L2)
-        else:
+        backend_flag = self._resolve_backend_flag()
+        if backend_flag is None:
             self.cap = cv2.VideoCapture(resolved_device)
+        else:
+            self.cap = cv2.VideoCapture(resolved_device, backend_flag)
 
         if not self.cap.isOpened():
             raise RuntimeError(f"Could not open camera device: {resolved_device}")
+
+        if self.buffersize is not None:
+            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, float(self.buffersize))
+
+        if self.requested_fps is not None:
+            self.cap.set(cv2.CAP_PROP_FPS, float(self.requested_fps))
+
+        if self.fourcc:
+            try:
+                self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*str(self.fourcc)))
+            except Exception as exc:
+                print(
+                    "Warning: failed to set requested FOURCC '{0}': {1}".format(
+                        self.fourcc, exc
+                    )
+                )
 
         width_ok = self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, float(self.target_width))
         height_ok = self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, float(self.target_height))
@@ -118,6 +177,35 @@ class GelSightMiniRGBCompat:
                     actual_height,
                 )
             )
+
+        if self.log_capture_properties:
+            actual_fps = float(self.cap.get(cv2.CAP_PROP_FPS))
+            actual_fourcc = _fourcc_to_str(self.cap.get(cv2.CAP_PROP_FOURCC))
+            backend_prop = getattr(cv2, "CAP_PROP_BACKEND", None)
+            actual_backend = (
+                int(self.cap.get(backend_prop))
+                if backend_prop is not None
+                else -1
+            )
+            actual_buffersize = float(self.cap.get(cv2.CAP_PROP_BUFFERSIZE))
+            backend_label = "default" if backend_flag is None else str(backend_flag)
+            print(
+                "Capture properties: backend_flag={0}, backend={1}, device={2}, "
+                "size={3}x{4}, fps={5:.2f}, fourcc='{6}', buffersize={7}".format(
+                    backend_label,
+                    actual_backend,
+                    resolved_device,
+                    actual_width,
+                    actual_height,
+                    actual_fps,
+                    actual_fourcc,
+                    actual_buffersize,
+                )
+            )
+
+        for _ in range(self.warmup_grabs):
+            self.cap.grab()
+
         self._time_prev = time.time()
 
     def read_rgb(self) -> np.ndarray:
