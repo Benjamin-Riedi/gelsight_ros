@@ -83,7 +83,12 @@ def _parse_forced_roi(
 
 
 class GelSightMiniRGBCompat:
-    """RGB-only OpenCV capture helper, compatible with Python 3.8+."""
+    """RGB-only OpenCV capture helper, compatible with Python 3.8+.
+
+    Performance notes (Linux):
+    - Backend, FOURCC, FPS and buffering have a huge impact on throughput.
+    - For many UVC cameras, reducing CAP_PROP_BUFFERSIZE helps a lot.
+    """
 
     def __init__(
         self,
@@ -139,7 +144,7 @@ class GelSightMiniRGBCompat:
 
             video_nodes = sorted(glob.glob("/dev/video*"))
             for path in video_nodes:
-                match = re.search(r"/dev/video(\\d+)$", path)
+                match = re.search(r"/dev/video(\d+)$", path)
                 if match:
                     devices[int(match.group(1))] = path
             return devices
