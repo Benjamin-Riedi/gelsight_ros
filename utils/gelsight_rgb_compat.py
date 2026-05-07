@@ -33,13 +33,27 @@ def _crop_and_resize(
     return cropped
 
 
-def _fourcc_to_str(fourcc_value: float) -> str:
+def _fourcc_to_str(fourcc_code: Union[int, float]) -> str:
     """Convert OpenCV FOURCC float value to printable 4-character string."""
     try:
-        value = int(fourcc_value)
-        return "".join([chr((value >> (8 * i)) & 0xFF) for i in range(4)])
-    except Exception:
+        value = int(fourcc_code)
+        chars = []
+        for i in range(4):
+            c = chr((value >> (8 * i)) & 0xFF)
+            chars.append(c if 32 <= ord(c) <= 126 else "?")
+        return "".join(chars)
+    except (TypeError, ValueError, OverflowError):
         return "????"
+
+
+def _backend_flag_to_name(backend_flag: Optional[int]) -> str:
+    if backend_flag is None:
+        return "default"
+    if backend_flag == cv2.CAP_V4L2:
+        return "v4l2"
+    if backend_flag == cv2.CAP_GSTREAMER:
+        return "gstreamer"
+    return str(backend_flag)
 
 
 class GelSightMiniRGBCompat:
@@ -51,18 +65,24 @@ class GelSightMiniRGBCompat:
         target_height=480,
         border_fraction=0.15,
         prefer_v4l2=True,
-        backend=None,
-        buffersize=1,
-        fps=25.0,
-        fourcc=None,
-        warmup_grabs=3,
-        log_capture_properties=True,
+        backend: Optional[str] = None,
+        buffersize: Optional[int] = 1,
+        fps: Optional[float] = 25.0,
+        fourcc: Optional[str] = None,
+        warmup_grabs: int = 3,
+        log_capture_properties: bool = True,
     ):
+        """Initialize camera helper.
+
+        backend values (Linux only): "default"/"auto", "v4l2", "gstreamer".
+        Set buffersize=None or fps=None to skip those property requests.
+        """
         self.target_width = int(target_width)
         self.target_height = int(target_height)
         self.border_fraction = float(border_fraction)
         self.prefer_v4l2 = bool(prefer_v4l2)
         self.backend = backend
+        # Set to None to skip requesting these properties on open().
         self.buffersize = None if buffersize is None else int(buffersize)
         self.requested_fps = None if fps is None else float(fps)
         self.fourcc = fourcc
@@ -121,11 +141,14 @@ class GelSightMiniRGBCompat:
                 return cv2.CAP_V4L2
             if backend == "gstreamer":
                 return cv2.CAP_GSTREAMER
-            print("Warning: unknown backend '{0}', using default.".format(self.backend))
+            print(
+                "Warning: unknown backend '{0}', using default. "
+                "Valid options: default, auto, v4l2, gstreamer.".format(backend)
+            )
             return None
 
         # Backward-compatible behavior when backend is not explicitly provided.
-        if self.prefer_v4l2 and platform.system() == "Linux":
+        if self.prefer_v4l2:
             return cv2.CAP_V4L2
         return None
 
@@ -153,7 +176,7 @@ class GelSightMiniRGBCompat:
         if self.fourcc:
             try:
                 self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*str(self.fourcc)))
-            except Exception as exc:
+            except (TypeError, ValueError, cv2.error) as exc:
                 print(
                     "Warning: failed to set requested FOURCC '{0}': {1}".format(
                         self.fourcc, exc
@@ -185,10 +208,10 @@ class GelSightMiniRGBCompat:
             actual_backend = (
                 int(self.cap.get(backend_prop))
                 if backend_prop is not None
-                else -1
+                else None
             )
             actual_buffersize = float(self.cap.get(cv2.CAP_PROP_BUFFERSIZE))
-            backend_label = "default" if backend_flag is None else str(backend_flag)
+            backend_label = _backend_flag_to_name(backend_flag)
             print(
                 "Capture properties: backend_flag={0}, backend={1}, device={2}, "
                 "size={3}x{4}, fps={5:.2f}, fourcc='{6}', buffersize={7}".format(
@@ -203,8 +226,14 @@ class GelSightMiniRGBCompat:
                 )
             )
 
-        for _ in range(self.warmup_grabs):
-            self.cap.grab()
+        for i in range(self.warmup_grabs):
+            if not self.cap.grab():
+                print(
+                    "Warning: warmup grab failed at attempt {0} of {1}.".format(
+                        i + 1, self.warmup_grabs
+                    )
+                )
+                break
 
         self._time_prev = time.time()
 
