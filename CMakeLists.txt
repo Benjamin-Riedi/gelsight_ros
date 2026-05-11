@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   sensor_msgs
   cv_bridge
+  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -47,12 +48,11 @@ catkin_python_setup()
 ##   * uncomment the generate_messages entry below
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
-## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+# Generate messages in the 'msg' folder
+add_message_files(
+  FILES
+  Angles2d.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -68,11 +68,11 @@ catkin_python_setup()
 #   Action2.action
 # )
 
-## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-# )
+# Generate added messages and services with any dependencies listed here
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -106,7 +106,7 @@ catkin_python_setup()
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES gelsight_ros
-  CATKIN_DEPENDS rospy std_msgs sensor_msgs cv_bridge
+  CATKIN_DEPENDS rospy std_msgs sensor_msgs cv_bridge message_runtime
 #  DEPENDS system_lib
 )
 
@@ -163,6 +163,7 @@ include_directories(
 catkin_install_python(PROGRAMS
   src/rostest.py
   src/ros1_rgb_publisher.py
+  src/get_angle.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
