@@ -236,6 +236,7 @@ class GelSightMiniRGBCompat:
 
         width_ok = self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, float(self.target_width))
         height_ok = self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, float(self.target_height))
+        print(f"Requested resolution set: {self.target_width}x{self.target_height}, width_ok={width_ok}, height_ok={height_ok}")
         if not width_ok or not height_ok:
             print(
                 "Warning: camera driver did not confirm requested frame size properties."
@@ -251,6 +252,8 @@ class GelSightMiniRGBCompat:
         size_mismatch = (
             actual_width != self.target_width or actual_height != self.target_height
         )
+        print(f"Requested resolution: {self.target_width}x{self.target_height}, Actual: {actual_width}x{actual_height}")
+
         if size_mismatch:
             print(
                 "Warning: requested resolution {0}x{1}, got {2}x{3}".format(
@@ -346,27 +349,29 @@ class GelSightMiniRGBCompat:
     def read_rgb(self) -> np.ndarray:
         if self.cap is None:
             raise RuntimeError("Camera is not opened.")
-
+        t_loop_start = time.perf_counter()
         ok, frame_bgr = self.cap.read()
+        t1 = time.perf_counter()
+        print(f"Time to read frame: {(t1 - t_loop_start) * 1000:.2f} ms")
         if not ok:
             raise RuntimeError("Failed to read frame from camera.")
 
-        if self.forced_roi is not None:
-            x, y, w, h = self.forced_roi
-            h_img, w_img = frame_bgr.shape[:2]
-            x0 = max(0, min(x, w_img - 1))
-            y0 = max(0, min(y, h_img - 1))
-            x1 = min(w_img, x0 + w)
-            y1 = min(h_img, y0 + h)
-            if x1 > x0 and y1 > y0:
-                frame_bgr = frame_bgr[y0:y1, x0:x1]
-            elif not self._warned_forced_roi_invalid:
-                print(
-                    "Warning: forced_roi {0} is outside frame bounds {1}x{2}; ignoring.".format(
-                        self.forced_roi, w_img, h_img
-                    )
-                )
-                self._warned_forced_roi_invalid = True
+        # if self.forced_roi is not None:
+        #     x, y, w, h = self.forced_roi
+        #     h_img, w_img = frame_bgr.shape[:2]
+        #     x0 = max(0, min(x, w_img - 1))
+        #     y0 = max(0, min(y, h_img - 1))
+        #     x1 = min(w_img, x0 + w)
+        #     y1 = min(h_img, y0 + h)
+        #     if x1 > x0 and y1 > y0:
+        #         frame_bgr = frame_bgr[y0:y1, x0:x1]
+        #     elif not self._warned_forced_roi_invalid:
+        #         print(
+        #             "Warning: forced_roi {0} is outside frame bounds {1}x{2}; ignoring.".format(
+        #                 self.forced_roi, w_img, h_img
+        #             )
+        #         )
+        #         self._warned_forced_roi_invalid = True
 
         now = time.time()
         dt = now - self._time_prev

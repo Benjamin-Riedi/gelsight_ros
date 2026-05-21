@@ -14,10 +14,10 @@ from utils.model import AnglePredictor, SimplerModel, SimpleModel
 bridge = CvBridge()
 pub = rospy.Publisher('/gelsight/angles', Angles2d, queue_size=1)
 
-model = AnglePredictor()
+model = SimpleModel()
 
 # model.load_state_dict(torch.load("/home/msrl/data_benjamin/20260501_session/data/exp1/Best Models/best_model_AnglePredictor_Original.pth"))
-model.load_state_dict(torch.load("/home/msrl/data_benjamin/20260501_session/data/exp1/best_model.pth"))
+model.load_state_dict(torch.load("/home/msrl/data_benjamin/20260501_session/data/best_model_simple.pth"))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 model.eval()
