@@ -41,15 +41,8 @@ def main():
         border_fraction=float(cfg.get("border_fraction", 0.15)),
         prefer_v4l2=bool(cfg.get("prefer_v4l2", True)),
         backend=cfg.get("backend", None),
-        buffersize=cfg.get("buffersize", 1),
         fps=cfg.get("fps", 25.0),
-        fourcc=cfg.get("fourcc", None),
-        warmup_grabs=int(cfg.get("warmup_grabs", 3)),
         log_capture_properties=bool(cfg.get("log_capture_properties", True)),
-        forced_roi=cfg.get("forced_roi", None),
-        retry_resolution_on_mismatch=bool(
-            cfg.get("retry_resolution_on_mismatch", True)
-        ),
     )
 
     device = cfg.get("device", None)
@@ -63,10 +56,8 @@ def main():
 
     pub = rospy.Publisher(image_topic, Image, queue_size=int(cfg.get("queue_size", 1)))
     bridge = CvBridge()
-    rate = rospy.Rate(publish_rate_hz)
 
     rospy.loginfo("Publishing GelSight RGB frames on %s", image_topic)
-
     try:
         while not rospy.is_shutdown():
             t_loop_start = time.perf_counter()
@@ -87,9 +78,6 @@ def main():
 
             pub.publish(msg)
             t4 = time.perf_counter()
-
-            # rate.sleep()
-            # t5 = time.perf_counter()
 
             rospy.logdebug(
                 "loop timings (ms) — read_rgb: %.2f  cv2_to_imgmsg: %.2f  "
