@@ -167,6 +167,7 @@ catkin_install_python(PROGRAMS
   src/get_angle.py
   src/vicon_angle.py
   src/calc_error.py
+  src/resize.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

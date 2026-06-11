@@ -3,6 +3,7 @@ import argparse
 import json
 import os
 import time
+import numpy as np
 
 import rospy
 from cv_bridge import CvBridge
@@ -58,12 +59,31 @@ def main():
     bridge = CvBridge()
 
     rospy.loginfo("Publishing GelSight RGB frames on %s", image_topic)
+
+    # rospy.loginfo("Starting calibration. Don't touch the camera during this time...")
+    # rospy.sleep(2.0)
+    # cal_frames = []
+    # while len(cal_frames) < 50 and not rospy.is_shutdown():
+    #     cal_frame = cam.read_rgb()
+    #     if cal_frame is None:
+    #         rospy.logwarn("Received empty frame from camera during calibration. No calibration will be performed.")
+    #     else:
+    #         cal_frames.append(cal_frame)
+
+    # if not cal_frames:
+    #     rospy.logwarn("No valid calibration frames received. No calibration will be performed.")
+    # else:
+    #     # average the calibration frames to reduce noise
+    #     cal_frame = np.mean(np.stack(cal_frames, axis=0), axis=0)
+    #     cal_frame = np.clip(cal_frame, 0, 255).astype(np.uint8)
+
     try:
         while not rospy.is_shutdown():
             t_loop_start = time.perf_counter()
 
             t0 = time.perf_counter()
             frame_rgb = cam.read_rgb()
+            # frame_rgb = frame_rgb - cal_frame if cal_frame is not None else frame_rgb
             t1 = time.perf_counter()
             if frame_rgb is None:
                 rospy.logwarn("Received empty frame from camera, skipping publish.")
