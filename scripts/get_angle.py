@@ -6,13 +6,13 @@ import numpy as np
 from torchvision import transforms
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
-from gelsight_ros.msg import Angles2d
+from gelsight_ros.msg import Angles2dStamped
 from gelsight_ros.utils.model import AnglePredictor, SimplerModel, SimpleModel
 
 # how do i access the model
 
 bridge = CvBridge()
-pub = rospy.Publisher('/gelsight/angles', Angles2d, queue_size=1)
+pub = rospy.Publisher('/gelsight/angles', Angles2dStamped, queue_size=1)
 
 model = SimpleModel()
 
@@ -32,7 +32,7 @@ def callback(data):
     cv_image = bridge.imgmsg_to_cv2(data, desired_encoding='rgb8')
     # print("Received image with shape:", cv_image.shape)
 
-    angles = Angles2d()
+    angles = Angles2dStamped()
     with torch.no_grad():
         input_tensor = base_transform(cv_image).to(device)
         input_tensor = input_tensor.unsqueeze(0)  # Add batch dimension
@@ -41,6 +41,7 @@ def callback(data):
         # Get angle predictions from the model
         output = model(input_tensor)
         # print("Model output:", output)
+        angles.header.stamp = rospy.Time.now()
         angles.angleX = np.rad2deg(output[0, 0].item())
         angles.angleY = np.rad2deg(output[0, 1].item())
 

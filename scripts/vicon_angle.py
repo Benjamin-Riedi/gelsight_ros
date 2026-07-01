@@ -3,16 +3,16 @@ import rospy
 import numpy as np
 import tf2_ros
 
-from gelsight_ros.msg import Angles2d
+from gelsight_ros.msg import Angles2dStamped
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import TransformStamped
 from python_utils.gen import quaternion_to_normal_vector, angles_from_normal_vector
 
-pub = rospy.Publisher('/vicon/angles', Angles2d, queue_size=1)
+pub = rospy.Publisher('/vicon/angles', Angles2dStamped, queue_size=1)
 
 def callback(image):
 
-    angles = Angles2d()
+    angles = Angles2dStamped()
     try:
         transform = tf_buffer.lookup_transform('vicon/world', 'vicon/benjamin_v2/Root',  rospy.Time(0))
     except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
@@ -22,6 +22,7 @@ def callback(image):
     quat = np.array([[rotation.x, rotation.y, rotation.z, rotation.w]])
     normal_vector = quaternion_to_normal_vector(quat)
     angles.angleY, angles.angleX = np.rad2deg(angles_from_normal_vector(-normal_vector))
+    angles.header.stamp = rospy.Time.now()
 
     # print(f"Received angles from TF: {angles.angleX}, {angles.angleY}")
     
