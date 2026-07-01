@@ -52,7 +52,7 @@ catkin_python_setup()
 # Generate messages in the 'msg' folder
 add_message_files(
   FILES
-  Angles2d.msg
+  Angles2dStamped.msg
 )
 
 ## Generate services in the 'srv' folder
