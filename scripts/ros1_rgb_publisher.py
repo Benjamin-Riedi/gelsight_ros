@@ -31,7 +31,7 @@ def main():
 
     rospy.init_node(cfg.get("node_name", "gelsight_rgb_publisher"), anonymous=False)
 
-    image_topic = cfg.get("image_topic", "/gelsight/image_raw")
+    image_topic = rospy.get_param('/topics/gelsight/rgb', '/gelsight/rgb')
     frame_id = cfg.get("frame_id", "gelsight_rgb_optical_frame")
     publish_rate_hz = float(cfg.get("publish_rate_hz", 25.0))
 

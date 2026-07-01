@@ -8,7 +8,9 @@ from sensor_msgs.msg import Image
 from geometry_msgs.msg import TransformStamped
 from python_utils.gen import quaternion_to_normal_vector, angles_from_normal_vector
 
-pub = rospy.Publisher('/vicon/angles', Angles2dStamped, queue_size=1)
+pub_topic = rospy.get_param('/topics/vicon/angles', '/vicon/angles')
+
+pub = rospy.Publisher(pub_topic, Angles2dStamped, queue_size=1)
 
 def callback(image):
 

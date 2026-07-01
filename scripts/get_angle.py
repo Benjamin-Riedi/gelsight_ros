@@ -12,7 +12,9 @@ from gelsight_ros.utils.model import AnglePredictor, SimplerModel, SimpleModel
 # how do i access the model
 
 bridge = CvBridge()
-pub = rospy.Publisher('/gelsight/angles', Angles2dStamped, queue_size=1)
+pub_topic = rospy.get_param('/topics/gelsight/angles', '/gelsight/angles')
+sub_topic = rospy.get_param('/topics/gelsight/rgb', '/gelsight/rgb')
+pub = rospy.Publisher(pub_topic, Angles2dStamped, queue_size=1)
 
 model = SimpleModel()
 
@@ -56,7 +58,7 @@ def callback(data):
 def main():
     rospy.init_node('angle_publisher', anonymous=True) #why anonymous=True?
 
-    rospy.Subscriber('/gelsight/image_raw', Image, callback)
+    rospy.Subscriber(sub_topic, Image, callback)
 
     rospy.spin()
 
