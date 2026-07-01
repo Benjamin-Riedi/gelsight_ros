@@ -162,12 +162,12 @@ include_directories(
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
-  src/rostest.py
-  src/ros1_rgb_publisher.py
-  src/get_angle.py
-  src/vicon_angle.py
-  src/calc_error.py
-  src/resize.py
+  scripts/rostest.py
+  scripts/ros1_rgb_publisher.py
+  # scripts/get_angle.py
+  scripts/vicon_angle.py
+  scripts/calc_error.py
+  scripts/resize.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

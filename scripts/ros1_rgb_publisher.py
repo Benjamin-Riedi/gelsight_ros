@@ -9,8 +9,7 @@ import rospy
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 
-from utils import GelSightMiniRGBCompat
-
+from gelsight_ros.utils.gelsight_rgb_compat import GelSightMiniRGBCompat
 
 def load_config(config_path):
     with open(config_path, "r", encoding="utf-8") as f:
@@ -23,7 +22,7 @@ def main():
     parser.add_argument(
         "--config",
         type=str,
-        default=os.path.join(package_root, "utils", "rgb_ros1_noetic_config.json"),
+        default=os.path.join(package_root, "config", "rgb_ros1_noetic_config.json"),
         help="Path to JSON config file",
     )
     args = parser.parse_args(rospy.myargv()[1:])

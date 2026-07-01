@@ -7,7 +7,7 @@ import rospy
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 
-from utils import GelSightMiniRGBCompat
+from gelsight_ros.utils import GelSightMiniRGBCompat
 
 
 def load_config(config_path):

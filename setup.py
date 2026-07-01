@@ -1,10 +1,10 @@
-#!/usr/bin/env python3
+from distutils.core import setup
+from catkin_pkg.python_setup import generate_distutils_setup
+from setuptools import find_packages
 
-from setuptools import setup
-
-setup(
-    name="gelsight_ros",
-    version="0.0.0",
-    packages=["utils"],
-    package_dir={"": "."},
+d = generate_distutils_setup(
+    packages=find_packages(where='src'),
+    package_dir={'': 'src'},
 )
+
+setup(**d)

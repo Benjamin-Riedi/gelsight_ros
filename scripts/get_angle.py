@@ -7,7 +7,7 @@ from torchvision import transforms
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 from gelsight_ros.msg import Angles2d
-from utils.model import AnglePredictor, SimplerModel, SimpleModel
+from gelsight_ros.utils.model import AnglePredictor, SimplerModel, SimpleModel
 
 # how do i access the model
 
