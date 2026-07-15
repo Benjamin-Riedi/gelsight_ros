@@ -7,61 +7,71 @@ from torchvision import transforms
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 from gelsight_ros.msg import Angles2dStamped
+from control_utils.msg import ScalarStamped
 from gelsight_ros.utils.model import AnglePredictor, SimplerModel, SimpleModel
 
 # how do i access the model
 
-bridge = CvBridge()
-pub_topic = rospy.get_param('/topics/gelsight/angles', '/gelsight/angles')
-sub_topic = rospy.get_param('/topics/gelsight/rgb', '/gelsight/rgb')
-pub = rospy.Publisher(pub_topic, Angles2dStamped, queue_size=1)
+class GetAngle():
+    def __init__(self):
+        rospy.init_node('angle_publisher', anonymous=True)
 
-model = SimpleModel()
+        self.init_topics()
+        self.bridge = CvBridge()
+        self.top_pub = rospy.Publisher(self.top_pub, ScalarStamped, queue_size=1)
+        self.bottom_pub = rospy.Publisher(self.bottom_pub, ScalarStamped, queue_size=1)
+        self.top_angle = ScalarStamped()
+        self.bottom_angle = ScalarStamped()
 
-# model.load_state_dict(torch.load("/home/msrl/data_benjamin/20260501_session/data/exp1/Best Models/best_model_AnglePredictor_Original.pth"))
-model.load_state_dict(torch.load("/home/msrl/data_benjamin/20260501_session/data/best_model_simple.pth"))
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device)
-model.eval()
+        self.model = SimpleModel()
 
-base_transform = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.5,), (0.5,))
-        ])
+        # model.load_state_dict(torch.load("/home/msrl/data_benjamin/20260501_session/data/exp1/Best Models/best_model_AnglePredictor_Original.pth"))
+        self.model.load_state_dict(torch.load("/home/benjamin/data_benjamin/20260501_session/data/best_model_simple.pth"))
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model.to(self.device)
+        self.model.eval()
 
-def callback(data):
-    # Convert ROS Image message to OpenCV image
-    cv_image = bridge.imgmsg_to_cv2(data, desired_encoding='rgb8')
-    # print("Received image with shape:", cv_image.shape)
+        self.base_transform = transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.Normalize((0.5,), (0.5,))
+                ])
+        
+    def init_topics(self):
+        self.top_pub = rospy.get_param('/top/gelsight')
+        self.bottom_pub = rospy.get_param('/bottom/gelsight')
 
-    angles = Angles2dStamped()
-    with torch.no_grad():
-        input_tensor = base_transform(cv_image).to(device)
-        input_tensor = input_tensor.unsqueeze(0)  # Add batch dimension
-        # print("Input tensor shape:", input_tensor.shape)
+    def callback(self, data):
+        # Convert ROS Image message to OpenCV image
+        cv_image = self.bridge.imgmsg_to_cv2(data, desired_encoding='rgb8')
+        # print("Received image with shape:", cv_image.shape)
 
-        # Get angle predictions from the model
-        output = model(input_tensor)
-        # print("Model output:", output)
-        angles.header.stamp = rospy.Time.now()
-        angles.angleX = np.rad2deg(output[0, 0].item())
-        angles.angleY = np.rad2deg(output[0, 1].item())
+        with torch.no_grad():
+            input_tensor = self.base_transform(cv_image).to(self.device)
+            input_tensor = input_tensor.unsqueeze(0)  # Add batch dimension
+            # print("Input tensor shape:", input_tensor.shape)
 
-    # somehow get the model in here to caluclate the angle
+            # Get angle predictions from the model
+            output = self.model(input_tensor)
+            # print("Model output:", output)
+            self.top_angle.header.stamp = rospy.Time.now()
+            self.bottom_angle.header.stamp = rospy.Time.now()
+            self.bottom_angle.scalar = np.rad2deg(output[0, 0].item()) # i think angle x is bottom, away from motor
+            self.top_angle.scalar = np.rad2deg(output[0, 1].item()) # and angle y is top, away from motor
 
-    # angles.angleX = 1.0
-    # angles.angleY = 2.0
+        # somehow get the model in here to caluclate the angle
+
+        # self.top_angle.scalar = 1.0
+        # self.bottom_angle.scalar = 2.0
 
 
-    pub.publish(angles)
+        self.top_pub.publish(self.top_angle)
+        self.bottom_pub.publish(self.bottom_angle)
 
-def main():
-    rospy.init_node('angle_publisher', anonymous=True) #why anonymous=True?
-
-    rospy.Subscriber(sub_topic, Image, callback)
-
-    rospy.spin()
+    def run(self):
+        rospy.Subscriber(self.sub_topic, Image, self.callback)
+        rospy.spin()
 
 if __name__ == '__main__':
-    main()
+    node = GetAngle()
+    node.run()
 
