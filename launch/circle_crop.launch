@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="gelsight_ros" type="ros1_rgb_publisher.py" name="gelsight_rgb_publisher" output="screen"/>
+    <node pkg="pendulum_control" type="dashboard.py" name="pendulum_dashboard" output="screen"/>
+</launch>

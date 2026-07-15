@@ -11,6 +11,42 @@ import numpy as np
 
 DeviceRef = Union[int, str]
 
+def detect_circle(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    blurred = cv2.GaussianBlur(gray, (9, 9), 2)
+    circles = cv2.HoughCircles(
+        blurred,
+        cv2.HOUGH_GRADIENT,
+        dp=1,
+        minDist=50,
+        param1=50,
+        param2=10,
+        minRadius=100,
+        maxRadius=160,
+    )
+
+    if circles is not None:
+        circles = np.uint16(np.around(circles))
+        print(f"Detected circles: {circles}")
+        return circles[0][0] # Return the first detected circle (x, y, radius)
+    else:
+        print("No circle detected.")
+        return image
+
+def crop_to_circle(image, circle, radius_factor=1.5):
+    x, y, r = circle
+    r = np.int16(np.around(r * radius_factor))
+
+    # Crop bounding box around circle
+    x1 = max(0, x - r)
+    y1 = max(0, y - r)
+    x2 = min(image.shape[1], x + r)
+    y2 = min(image.shape[0], y + r)
+
+    crop = image[y1:y2, x1:x2]
+    return crop
+
+
 
 def _crop_and_resize(
     image: np.ndarray,
@@ -239,7 +275,7 @@ class GelSightMiniRGBCompat:
         dt = now - self._time_prev
         self.fps = 1.0 / dt if dt > 0.0 else 0.0
         self._time_prev = now
-        print(f"Effective capture FPS: {self.fps:.2f}")
+        # print(f"Effective capture FPS: {self.fps:.2f}")
 
         frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
         frame_rgb = _crop_and_resize(

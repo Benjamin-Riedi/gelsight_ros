@@ -14,6 +14,8 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   cv_bridge
   message_generation
+  std_srvs
+  # pendulum_control
 )
 
 ## System dependencies are found with CMake's conventions
@@ -107,7 +109,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES gelsight_ros
-  CATKIN_DEPENDS rospy std_msgs sensor_msgs cv_bridge message_runtime geometry_msgs
+  CATKIN_DEPENDS rospy std_msgs sensor_msgs cv_bridge message_runtime geometry_msgs std_srvs
 #  DEPENDS system_lib
 )
 
