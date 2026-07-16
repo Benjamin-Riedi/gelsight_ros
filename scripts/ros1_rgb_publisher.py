@@ -88,6 +88,8 @@ class GelSightRGBPublisher:
     def run(self):
         if self.activate_calibration:
             self.calibrated.wait()
+        else:
+            rospy.logwarn("Not calibrating")
         try:
             while not rospy.is_shutdown():
                 t_loop_start = time.perf_counter()
@@ -101,10 +103,12 @@ class GelSightRGBPublisher:
                     continue
 
                 # crop the frame to the detected circle
-                crop = crop_to_circle(frame_rgb, self.detected_circle)
-                msg = self.bridge.cv2_to_imgmsg(crop, encoding="rgb8")
-
-                # msg = self.bridge.cv2_to_imgmsg(frame_rgb, encoding="rgb8")
+                if self.calibrated.is_set():
+                    crop = crop_to_circle(frame_rgb, self.detected_circle)
+                    msg = self.bridge.cv2_to_imgmsg(crop, encoding="rgb8")
+                else:
+                    msg = self.bridge.cv2_to_imgmsg(frame_rgb, encoding="rgb8")
+                    
                 t2 = time.perf_counter()
 
                 msg.header.stamp = rospy.Time.now()

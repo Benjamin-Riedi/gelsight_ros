@@ -7,7 +7,7 @@
         type="ros1_rgb_publisher.py"
         name="gelsight_rgb_publisher"
         output="screen"
-        args="$(arg config)" />
+        args="--config $(arg config)" />
 	<node
 		pkg="gelsight_ros"
 		type="get_angle.py"
