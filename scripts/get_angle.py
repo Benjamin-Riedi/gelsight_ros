@@ -2,6 +2,8 @@
 import rospy
 import torch
 import numpy as np
+import rospkg
+import os
 
 from torchvision import transforms
 from cv_bridge import CvBridge
@@ -25,10 +27,15 @@ class GetAngle():
 
         self.model = SimpleModel()
 
+        rospack = rospkg.RosPack()
+        self.package_path = rospack.get_path('gelsight_ros')
+
+        self.model_path = os.path.join(self.package_path, "src/gelsight_ros/utils/best_model_simple.pth")
         # model.load_state_dict(torch.load("/home/msrl/data_benjamin/20260501_session/data/exp1/Best Models/best_model_AnglePredictor_Original.pth"))
         # self.model.load_state_dict(torch.load("/home/benjamin/data_benjamin/20260501_session/data/best_model_simple.pth"))
-        self.model.load_state_dict(torch.load("/home/briedi/Bachelor_Thesis/data_benjamin/20260501_session/data/best_model_simple.pth"))
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model.load_state_dict(torch.load(self.model_path, map_location=torch.device('cpu')))
+        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu")
         self.model.to(self.device)
         self.model.eval()
 
