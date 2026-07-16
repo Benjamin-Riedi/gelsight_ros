@@ -43,6 +43,7 @@
   <depend>cv_bridge</depend>
   <depend>sensor_msgs</depend>
   <depend>geometry_msgs</depend>
+  <depend>control_utils</depend>
   <exec_depend>python3-opencv</exec_depend>
   <exec_depend>python3-numpy</exec_depend>
   <exec_depend>roslaunch</exec_depend>

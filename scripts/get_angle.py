@@ -26,7 +26,8 @@ class GetAngle():
         self.model = SimpleModel()
 
         # model.load_state_dict(torch.load("/home/msrl/data_benjamin/20260501_session/data/exp1/Best Models/best_model_AnglePredictor_Original.pth"))
-        self.model.load_state_dict(torch.load("/home/benjamin/data_benjamin/20260501_session/data/best_model_simple.pth"))
+        # self.model.load_state_dict(torch.load("/home/benjamin/data_benjamin/20260501_session/data/best_model_simple.pth"))
+        self.model.load_state_dict(torch.load("/home/briedi/Bachelor_Thesis/data_benjamin/20260501_session/data/best_model_simple.pth"))
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.model.eval()
@@ -39,6 +40,7 @@ class GetAngle():
     def init_topics(self):
         self.top_pub = rospy.get_param('/top/gelsight')
         self.bottom_pub = rospy.get_param('/bottom/gelsight')
+        self.sub_topic = '/gelsight/image_raw'
 
     def callback(self, data):
         # Convert ROS Image message to OpenCV image

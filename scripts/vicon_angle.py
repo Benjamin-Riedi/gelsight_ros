@@ -43,7 +43,7 @@ class ViconAnglePublisher:
         self.bottom_pub.publish(self.bottom_angle)
 
     def run(self):
-        rospy.Subscriber('/gelsight/rgb', Image, self.callback)
+        rospy.Subscriber('/gelsight/image_raw', Image, self.callback)
         rospy.spin()
 
 

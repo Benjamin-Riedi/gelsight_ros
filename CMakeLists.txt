@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   message_generation
   std_srvs
+  control_utils
   # pendulum_control
 )
 
@@ -109,7 +110,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES gelsight_ros
-  CATKIN_DEPENDS rospy std_msgs sensor_msgs cv_bridge message_runtime geometry_msgs std_srvs
+  CATKIN_DEPENDS rospy std_msgs sensor_msgs cv_bridge message_runtime geometry_msgs std_srvs control_utils
 #  DEPENDS system_lib
 )
 
@@ -166,7 +167,7 @@ include_directories(
 catkin_install_python(PROGRAMS
   scripts/rostest.py
   scripts/ros1_rgb_publisher.py
-  # scripts/get_angle.py
+  scripts/get_angle.py
   scripts/vicon_angle.py
   scripts/calc_error.py
   scripts/resize.py
