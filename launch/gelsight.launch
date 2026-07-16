@@ -1,19 +1,26 @@
 <launch>
-  <arg name="config" default="$(find gelsight_ros)/utils/rgb_ros1_noetic_config.json" />
+	<arg name="config" default="$(find gelsight_ros)/utils/rgb_ros1_noetic_config.json" />
+    <rosparam command="load" file="$(find pendulum_control)/config/param_server.yaml" />
 
-  <node
-    pkg="gelsight_ros"
-    type="get_angle.py"
-    name="angle_publisher"
-    output="screen" />
-  <node
-    pkg="gelsight_ros"
-    type="vicon_angle.py"
-    name="vicon_angle_publisher"
-    output="screen" />
-  <node
-    pkg="gelsight_ros"
-    type="calc_error.py"
-    name="angle_error_publisher"
-    output="screen" />
+    <node
+        pkg="gelsight_ros"
+        type="ros1_rgb_publisher.py"
+        name="gelsight_rgb_publisher"
+        output="screen"
+        args="$(arg config)" />
+	<node
+		pkg="gelsight_ros"
+		type="get_angle.py"
+		name="angle_publisher"
+		output="screen" />
+	<node
+		pkg="gelsight_ros"
+		type="vicon_angle.py"
+		name="vicon_angle_publisher"
+		output="screen" />
+    <node
+		pkg="gelsight_ros"
+		type="calc_error.py"
+		name="angle_error_publisher"
+		output="screen" />
 </launch>

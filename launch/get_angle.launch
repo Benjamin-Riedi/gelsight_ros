@@ -1,4 +1,5 @@
 <launch>
     <rosparam command="load" file="$(find pendulum_control)/config/param_server.yaml" />
-    <node pkg="gelsight_ros" type="get_angle.py" name="angle_publisher" output="screen"/>
+    <node pkg="gelsight_ros" type="get_angle.py" name="gelsight_angle_publisher" output="screen"/>
+    <node pkg="gelsight_ros" type="vicon_angle.py" name="vicon_angle_publisher" output="screen"/>
 </launch>

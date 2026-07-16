@@ -20,6 +20,7 @@ class ViconAnglePublisher:
 
         self.top_pub = rospy.Publisher(self.top_angle_topic, ScalarStamped, queue_size=1)
         self.bottom_pub = rospy.Publisher(self.bottom_angle_topic, ScalarStamped, queue_size=1)
+        self.sub_topic = rospy.get_param('/gelsight/rgb')
 
     def callback(self, image):
         self.top_angle = ScalarStamped()
@@ -43,7 +44,7 @@ class ViconAnglePublisher:
         self.bottom_pub.publish(self.bottom_angle)
 
     def run(self):
-        rospy.Subscriber('/gelsight/image_raw', Image, self.callback)
+        rospy.Subscriber(self.sub_topic, Image, self.callback)
         rospy.spin()
 
 

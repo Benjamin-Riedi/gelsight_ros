@@ -52,6 +52,7 @@ class GelSightRGBPublisher:
         self.cam.open(device=device)
 
         rospy.init_node(cfg.get("node_name", "gelsight_rgb_publisher"), anonymous=False)
+        self.activate_calibration = False
 
         self.calib_srv = rospy.Service(
             '/sensor/start',
@@ -59,7 +60,7 @@ class GelSightRGBPublisher:
             self.calibrate_cb
         )
 
-        image_topic = rospy.get_param('/topics/gelsight/rgb', '/gelsight/rgb')
+        image_topic = rospy.get_param('/gelsight/rgb', '/gelsight/rgb')
         self.frame_id = cfg.get("frame_id", "gelsight_rgb_optical_frame")
         publish_rate_hz = float(cfg.get("publish_rate_hz", 25.0))
         self.pub = rospy.Publisher(image_topic, Image, queue_size=int(cfg.get("queue_size", 1)))
@@ -85,7 +86,8 @@ class GelSightRGBPublisher:
         return TriggerResponse(success=True, message="Calibration complete.")
 
     def run(self):
-        self.calibrated.wait()
+        if self.activate_calibration:
+            self.calibrated.wait()
         try:
             while not rospy.is_shutdown():
                 t_loop_start = time.perf_counter()

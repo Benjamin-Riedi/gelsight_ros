@@ -1,9 +1,9 @@
 {
   "node_name": "gelsight_rgb_publisher",
-  "image_topic": "/gelsight/image_raw",
+  "image_topic": "/gelsight/rgb",
   "frame_id": "gelsight_rgb_optical_frame",
   "queue_size": 2,
-  "device": 2,
+  "device": 0,
   "target_width": 640,
   "target_height": 480,
   "border_fraction": 0.15,

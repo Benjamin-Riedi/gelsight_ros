@@ -14,7 +14,7 @@ from gelsight_ros.utils.model import AnglePredictor, SimplerModel, SimpleModel
 
 class GetAngle():
     def __init__(self):
-        rospy.init_node('angle_publisher', anonymous=True)
+        rospy.init_node('gelsight_angle_publisher', anonymous=True)
 
         self.init_topics()
         self.bridge = CvBridge()
@@ -40,7 +40,7 @@ class GetAngle():
     def init_topics(self):
         self.top_pub = rospy.get_param('/top/gelsight')
         self.bottom_pub = rospy.get_param('/bottom/gelsight')
-        self.sub_topic = '/gelsight/image_raw'
+        self.sub_topic = rospy.get_param('/gelsight/rgb')
 
     def callback(self, data):
         # Convert ROS Image message to OpenCV image
