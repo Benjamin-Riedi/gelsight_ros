@@ -8,9 +8,9 @@ from control_utils.msg import ScalarStamped
 from geometry_msgs.msg import TransformStamped
 from python_utils.gen import quaternion_to_normal_vector, angles_from_normal_vector
 
-class ViconAnglePublisher:
+class ViconGroundTruthPublisher:
     def __init__(self):
-        rospy.init_node('vicon_angle_publisher', anonymous=True)
+        rospy.init_node('vicon_ground_truth_publisher', anonymous=True)
 
         self.tf_buffer = tf2_ros.Buffer()
         self.listener = tf2_ros.TransformListener(self.tf_buffer)
@@ -34,7 +34,8 @@ class ViconAnglePublisher:
         rotation = transform.transform.rotation
         quat = np.array([[rotation.x, rotation.y, rotation.z, rotation.w]])
         normal_vector = quaternion_to_normal_vector(quat)
-        self.top_angle.scalar, self.bottom_angle.scalar = np.rad2deg(angles_from_normal_vector(-normal_vector))
+        self.top_angle.scalar, self.bottom_angle.scalar = angles_from_normal_vector(-normal_vector) # rad2deg was here
+        self.top_angle.scalar = -self.top_angle.scalar  # flip sign for top angle to match the convention used in the model
         self.top_angle.header.stamp = rospy.Time.now()
         self.bottom_angle.header.stamp = rospy.Time.now()
 
@@ -49,5 +50,5 @@ class ViconAnglePublisher:
 
 
 if __name__ == "__main__":
-    node = ViconAnglePublisher()
+    node = ViconGroundTruthPublisher()
     node.run()

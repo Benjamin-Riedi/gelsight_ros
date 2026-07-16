@@ -64,8 +64,8 @@ class GetAngle():
             # print("Model output:", output)
             self.top_angle.header.stamp = rospy.Time.now()
             self.bottom_angle.header.stamp = rospy.Time.now()
-            self.bottom_angle.scalar = np.rad2deg(output[0, 0].item()) # i think angle x is bottom, away from motor
-            self.top_angle.scalar = np.rad2deg(output[0, 1].item()) # and angle y is top, away from motor
+            self.bottom_angle.scalar = output[0, 0].item() # i think angle x is bottom, towards the motor
+            self.top_angle.scalar = -output[0, 1].item() # and angle y is top, away from motor. (so flip sign because the model is trained with the opposite convention)
 
         # somehow get the model in here to caluclate the angle
 

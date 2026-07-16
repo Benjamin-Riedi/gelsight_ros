@@ -13,14 +13,4 @@
 		type="get_angle.py"
 		name="angle_publisher"
 		output="screen" />
-	<node
-		pkg="gelsight_ros"
-		type="vicon_angle.py"
-		name="vicon_ground_truth_publisher"
-		output="screen" />
-    <node
-		pkg="gelsight_ros"
-		type="calc_error.py"
-		name="angle_error_publisher"
-		output="screen" />
 </launch>
