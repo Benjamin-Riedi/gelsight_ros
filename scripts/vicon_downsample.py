@@ -23,6 +23,17 @@ class ViconAnglePublisher:
 
         self.downsample_factor = rospy.get_param('/vicon/downsample_factor', 10)
         self.hold = 0
+    
+    def init_variables(self):
+        self.x = 0.0
+        self.y = 0.0
+        self.z = 0.0
+        self.angle_x = 0.0
+        self.angle_y = 0.0
+
+        self.valid = True
+        self.pos_threshold = 0.01
+        self.angle_threshold = 0.01
 
     def callback(self, tf_msg):
         if self.hold <= self.downsample_factor:
@@ -39,10 +50,13 @@ class ViconAnglePublisher:
             except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
                 rospy.logerr("Failed to lookup transform")
 
+            # translation = transform.transform.translation
+            # self.valid = abs(translation.x - self.x) < self.pos_threshold and abs(translation.y - self.y) < self.pos_threshold and abs(translation.z - self.z) < self.pos_threshold
             rotation = transform.transform.rotation
             quat = np.array([[rotation.x, rotation.y, rotation.z, rotation.w]])
             normal_vector = quaternion_to_normal_vector(quat)
-            self.top_angle.scalar, self.bottom_angle.scalar = np.rad2deg(angles_from_normal_vector(-normal_vector))
+            # self.angle_y, self.angle_x = angles_from_normal_vector(-normal_vector)
+            self.top_angle.scalar, self.bottom_angle.scalar = angles_from_normal_vector(-normal_vector)
             self.top_angle.scalar = -self.top_angle.scalar  # flip sign for top angle to match the convention used in the model
             self.top_angle.header.stamp = rospy.Time.now()
             self.bottom_angle.header.stamp = rospy.Time.now()

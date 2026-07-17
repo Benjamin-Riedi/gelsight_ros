@@ -171,6 +171,7 @@ catkin_install_python(PROGRAMS
   scripts/vicon_angle.py
   scripts/calc_error.py
   scripts/resize.py
+  scripts/vicon_downsample.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
